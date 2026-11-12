@@ -1,0 +1,14 @@
+{
+  "name": "ШИНА+ — шиномонтаж без очередей",
+  "short_name": "ШИНА+",
+  "description": "Запись на шиномонтаж и кабинет мастерской",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#e9e5db",
+  "theme_color": "#e9e5db",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#e9e5db">
+    <meta name="description" content="ШИНА+ — запись на шиномонтаж без ожидания.">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./fixes.css">
+    <title>ШИНА+ — шиномонтаж без очередей</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>Для работы демо включите JavaScript.</noscript>
+    <script src="./app.js" defer></script>
+    <script>
+      if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+        window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+      }
+    </script>
+  </body>
+</html>
