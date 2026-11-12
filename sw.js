@@ -1,4 +1,4 @@
-const CACHE = 'shina-plus-demo-v10';
+const CACHE = 'shina-plus-demo-v12';
 const CORE = ['./', './index.html', './styles.css', './fixes.css', './app.js', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)));

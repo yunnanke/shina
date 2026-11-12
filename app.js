@@ -54,7 +54,7 @@
   function getAdminPassword() { try { return localStorage.getItem(ADMIN_PASSWORD_KEY) || ADMIN_PASSWORD; } catch (e) { return ADMIN_PASSWORD; } }
   let data = loadData();
   function saveData() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
-  let page = hasAdminAccess() ? 'admin' : 'client', adminTab = 'overview', selectedDate = dateOffset(0), bookingFilter = 'all', bookingStep = 1, adminTapCount = 0, adminTapTimer = null, bookingDraft = { services: [], date: '', time: '', carType: 'Легковой', diameter: 'R16', extras: [] }, installPrompt = null;
+  let page = hasAdminAccess() ? 'admin' : 'client', adminTab = 'overview', selectedDate = dateOffset(0), bookingFilter = 'all', bookingStep = 1, adminTapCount = 0, adminTapTimer = null, bookingDraft = { services: [], date: '', time: '', carType: 'Легковой', diameter: 'R16', carModel: '', extras: [] }, installPrompt = null;
   const rub = function (n) { return new Intl.NumberFormat('ru-RU').format(n) + ' ₽'; };
   const dateRu = function (d, options) { return new Intl.DateTimeFormat('ru-RU', options || { day: 'numeric', month: 'long' }).format(new Date(d + 'T12:00:00')); };
   const fullDate = function (d) { return new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(d + 'T12:00:00')); };
@@ -248,7 +248,7 @@
   }
   function openBooking(prefill) {
     bookingStep=1;
-    bookingDraft={services:[],date:'',time:'',carType:'Легковой',diameter:'R16',extras:[]};
+    bookingDraft={services:[],date:'',time:'',carType:'Легковой',diameter:'R16',carModel:'',extras:[]};
     if (prefill) { bookingDraft.date=prefill.date||'';bookingDraft.time=prefill.time||''; }
     renderBookingModal();
   }
@@ -259,14 +259,14 @@
     if (bookingStep===1) {
       body='<div class="micro">ШАГ 01 / ВЫБЕРИТЕ РАБОТЫ</div><div class="choice-grid">'+data.services.map(function(s){return '<button class="choice '+(bookingDraft.services.includes(s.id)?'selected':'')+'" data-action="toggle-service" data-id="'+esc(s.id)+'"><span>'+esc(s.name)+'<small>'+s.duration+' минут</small></span><strong>'+rub(s.price)+'</strong></button>';}).join('')+'</div>';
     } else if (bookingStep===2) {
-      body='<div class="micro">ШАГ 02 / ВАШ АВТОМОБИЛЬ</div><div class="form-row"><div class="field"><label>Тип автомобиля</label><select id="car-type"><option>Легковой</option><option>Кроссовер</option><option>Внедорожник</option><option>Микроавтобус</option></select></div><div class="field"><label>Диаметр колёс</label><select id="diameter">'+Array.from({length:10},function(_,i){return '<option '+(bookingDraft.diameter==='R'+(13+i)?'selected':'')+'>R'+(13+i)+'</option>';}).join('')+'</select></div></div><div class="field"><label>Марка и модель · необязательно</label><input id="car-model" placeholder="Например, Kia Sportage"></div><div class="field"><label>Особенности автомобиля</label><div class="choice-grid"><button class="choice '+(bookingDraft.extras.some(function(x){return x.id==='runflat';})?'selected':'')+'" data-action="toggle-extra" data-extra="runflat">Run-flat / низкий профиль <strong>+800 ₽</strong></button><button class="choice '+(bookingDraft.extras.some(function(x){return x.id==='tpms';})?'selected':'')+'" data-action="toggle-extra" data-extra="tpms">Датчики TPMS <strong>+1 200 ₽</strong></button></div></div>';
+      body='<div class="micro">ШАГ 02 / ВАШ АВТОМОБИЛЬ</div><div class="form-row"><div class="field"><label>Тип автомобиля</label><select id="car-type"><option>Легковой</option><option>Кроссовер</option><option>Внедорожник</option><option>Микроавтобус</option></select></div><div class="field"><label>Диаметр колёс</label><select id="diameter">'+Array.from({length:10},function(_,i){return '<option '+(bookingDraft.diameter==='R'+(13+i)?'selected':'')+'>R'+(13+i)+'</option>';}).join('')+'</select></div></div><div class="field"><label>Марка и модель · необязательно</label><input id="car-model" value="'+esc(bookingDraft.carModel||'')+'" placeholder="Например, Kia Sportage"></div><div class="field"><label>Особенности автомобиля</label><div class="choice-grid"><button class="choice '+(bookingDraft.extras.some(function(x){return x.id==='runflat';})?'selected':'')+'" data-action="toggle-extra" data-extra="runflat">Run-flat / низкий профиль <strong>+800 ₽</strong></button><button class="choice '+(bookingDraft.extras.some(function(x){return x.id==='tpms';})?'selected':'')+'" data-action="toggle-extra" data-extra="tpms">Датчики TPMS <strong>+1 200 ₽</strong></button></div></div>';
     } else if (bookingStep===3) {
       let dayHtml='';
       for(let i=0;i<10;i++){const day=dateOffset(i);const slots=availableSlots(day,Math.max(20,draftDuration()||50));const date=new Date(day+'T12:00:00');const off=data.hours.daysOff.includes(date.getDay());dayHtml+='<button class="choice '+(bookingDraft.date===day?'selected':'')+'" data-action="select-book-date" data-date="'+day+'" '+(off?'disabled':'')+'><span>'+dateRu(day,{weekday:'short',day:'numeric',month:'short'})+'<small>'+(off?'Выходной':slots.length+' свободных окон')+'</small></span><strong>'+(off?'—':slots.length?'›':'×')+'</strong></button>';}
       const slots=bookingDraft.date?availableSlots(bookingDraft.date,Math.max(20,draftDuration()||50)):[];
       body='<div class="micro">ШАГ 03 / ВЫБЕРИТЕ ДЕНЬ И ВРЕМЯ</div><div class="choice-grid">'+dayHtml+'</div>'+(bookingDraft.date?'<div class="field"><label>Свободное время · '+esc(dateRu(bookingDraft.date))+'</label><div class="time-grid">'+slots.slice(0,16).map(function(s){return '<button class="time-choice '+(bookingDraft.time===s.time?'selected':'')+'" data-action="select-book-time" data-time="'+s.time+'">'+s.time+'</button>';}).join('')+(slots.length?'':'<span class="legal">Нет окон в этот день</span>')+'</div></div>':'');
     } else if (bookingStep===4) {
-      body='<div class="micro">ШАГ 04 / КОНТАКТЫ</div><div class="form-row"><div class="field"><label>Ваше имя</label><input id="customer-name" placeholder="Как к вам обращаться"></div><div class="field"><label>Телефон</label><input id="customer-phone" type="tel" placeholder="+7 (___) ___-__-__" inputmode="tel"></div></div><div class="field"><label>Марка и модель · необязательно</label><input id="car-model" placeholder="Например, Kia Sportage"></div><div class="field"><label>Комментарий для мастера</label><textarea id="customer-note" placeholder="Например, есть секретки или нужно проверить прокол"></textarea></div><label class="legal"><input type="checkbox" id="consent"> Согласен(на) на обработку персональных данных и ознакомлен(а) с правилами визита.</label>';
+      body='<div class="micro">ШАГ 04 / КОНТАКТЫ</div><div class="form-row"><div class="field"><label>Ваше имя</label><input id="customer-name" placeholder="Как к вам обращаться"></div><div class="field"><label>Телефон</label><input id="customer-phone" type="tel" placeholder="+7 (___) ___-__-__" inputmode="tel"></div></div><div class="field"><label>Комментарий для мастера</label><textarea id="customer-note" placeholder="Например, есть секретки или нужно проверить прокол"></textarea></div><label class="legal"><input type="checkbox" id="consent"> Согласен(на) на обработку персональных данных и ознакомлен(а) с правилами визита.</label>';
     }
     const selected = pickedServices();
     const summary=selected.length?selected.map(function(s){return s.name;}).join(', '):'Выберите услуги';
@@ -281,10 +281,9 @@
     const name=document.getElementById('customer-name'); const phone=document.getElementById('customer-phone');
     if(!isAdmin && (!name||!name.value.trim()||!phone||phone.value.replace(/\D/g,'').length<10)){showToast('Укажите имя и номер телефона');return;}
     if(!isAdmin && !document.getElementById('consent').checked){showToast('Нужно согласие на обработку данных');return;}
-    const carModel=document.getElementById('car-model');
     const chosenDate=bookingDraft.date||dateOffset(0), chosenTime=bookingDraft.time||'10:00';
     const slot=availableSlots(chosenDate,Math.max(20,draftDuration()||50))[0];
-    const booking={id:'D'+Math.floor(2000+Math.random()*7000),date:chosenDate,time:chosenTime,name:isAdmin?(name&&name.value.trim()||'Новый клиент'):name.value.trim(),phone:isAdmin?(phone&&phone.value||'+7 900 000-00-00'):phone.value.trim(),car:carModel&&carModel.value.trim()||'Автомобиль не указан',wheel:bookingDraft.diameter,service:pickedServices().map(function(s){return s.name;}).join(', '),price:draftPrice(),duration:Math.max(20,draftDuration()),post:slot?slot.post:1,status:data.settings.autoConfirm?'confirmed':'new',source:isAdmin?'Телефон':'Онлайн',note:document.getElementById('customer-note')?document.getElementById('customer-note').value:'',token:Math.random().toString(36).slice(2,16)};
+    const booking={id:'D'+Math.floor(2000+Math.random()*7000),date:chosenDate,time:chosenTime,name:isAdmin?(name&&name.value.trim()||'Новый клиент'):name.value.trim(),phone:isAdmin?(phone&&phone.value||'+7 900 000-00-00'):phone.value.trim(),car:bookingDraft.carModel&&bookingDraft.carModel.trim()||'Автомобиль не указан',wheel:bookingDraft.diameter,service:pickedServices().map(function(s){return s.name;}).join(', '),price:draftPrice(),duration:Math.max(20,draftDuration()),post:slot?slot.post:1,status:data.settings.autoConfirm?'confirmed':'new',source:isAdmin?'Телефон':'Онлайн',note:document.getElementById('customer-note')?document.getElementById('customer-note').value:'',token:Math.random().toString(36).slice(2,16)};
     data.bookings.push(booking);saveData();closeModal();
     if(isAdmin){selectedDate=chosenDate;adminTab='bookings';renderAdmin();showToast('Запись добавлена · клиенту отправлено уведомление');}
     else {showSuccess(booking);}
@@ -302,7 +301,7 @@
   }
   function editBooking(id) {
     const b=data.bookings.find(function(x){return x.id===id;});if(!b)return;
-    bookingDraft={services:[],date:b.date,time:b.time,carType:'Легковой',diameter:b.wheel||'R16',extras:[]};bookingStep=3;
+    bookingDraft={services:[],date:b.date,time:b.time,carType:'Легковой',diameter:b.wheel||'R16',carModel:b.car||'',extras:[]};bookingStep=3;
     renderBookingModal();
     const modal=document.querySelector('.modal');const head=modal.querySelector('h2');if(head)head.textContent='Перенести запись';
     const footer=modal.querySelector('.modal-actions');if(footer)footer.innerHTML='<button class="btn-light" data-action="close-modal">Закрыть</button><button class="btn-black" data-action="save-reschedule" data-id="'+esc(id)+'">Сохранить время →</button>';
@@ -336,8 +335,8 @@
     if(action==='change-admin-password'){changeAdminPassword();return;}
     if(action==='go-client'){page='client';renderClient();window.scrollTo(0,0);return;}
     if(action==='close-modal'){closeModal();return;}
-    if(action==='booking-next'){if(bookingStep===1&&!bookingDraft.services.length){showToast('Выберите хотя бы одну услугу');return;}if(bookingStep===3&&(!bookingDraft.date||!bookingDraft.time)){showToast('Выберите свободное время');return;}if(bookingStep===2){const type=document.getElementById('car-type');const dia=document.getElementById('diameter');if(type)bookingDraft.carType=type.value;if(dia)bookingDraft.diameter=dia.value;}bookingStep=Math.min(4,bookingStep+1);renderBookingModal();return;}
-    if(action==='booking-prev'){if(bookingStep===3){const d=document.getElementById('diameter');if(d)bookingDraft.diameter=d.value;}bookingStep=Math.max(1,bookingStep-1);renderBookingModal();return;}
+    if(action==='booking-next'){if(bookingStep===1&&!bookingDraft.services.length){showToast('Выберите хотя бы одну услугу');return;}if(bookingStep===3&&(!bookingDraft.date||!bookingDraft.time)){showToast('Выберите свободное время');return;}if(bookingStep===2){const type=document.getElementById('car-type');const dia=document.getElementById('diameter');const model=document.getElementById('car-model');if(type)bookingDraft.carType=type.value;if(dia)bookingDraft.diameter=dia.value;if(model)bookingDraft.carModel=model.value.trim();}bookingStep=Math.min(4,bookingStep+1);renderBookingModal();return;}
+    if(action==='booking-prev'){if(bookingStep===2){const type=document.getElementById('car-type');const dia=document.getElementById('diameter');const model=document.getElementById('car-model');if(type)bookingDraft.carType=type.value;if(dia)bookingDraft.diameter=dia.value;if(model)bookingDraft.carModel=model.value.trim();}bookingStep=Math.max(1,bookingStep-1);renderBookingModal();return;}
     if(action==='toggle-service'){const sid=el.getAttribute('data-id');bookingDraft.services=bookingDraft.services.includes(sid)?bookingDraft.services.filter(function(x){return x!==sid;}):bookingDraft.services.concat([sid]);renderBookingModal();return;}
     if(action==='toggle-extra'){const sid=el.getAttribute('data-extra');const price=sid==='runflat'?800:1200;bookingDraft.extras=bookingDraft.extras.some(function(x){return x.id===sid;})?bookingDraft.extras.filter(function(x){return x.id!==sid;}):bookingDraft.extras.concat([{id:sid,price:price}]);renderBookingModal();return;}
     if(action==='select-book-date'){bookingDraft.date=el.getAttribute('data-date');bookingDraft.time='';renderBookingModal();return;}
@@ -368,8 +367,18 @@
   });
   document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target&&e.target.id==='admin-password'){e.preventDefault();submitAdminLogin();}});
   document.addEventListener('input',function(e){
+    if(e.target.id==='car-model'){bookingDraft.carModel=e.target.value.trim();}
     if(e.target.id==='client-search'){const value=e.target.value.toLowerCase();document.querySelectorAll('#clients-table tbody tr').forEach(function(row){row.style.display=row.textContent.toLowerCase().includes(value)?'':'none';});}
     if(e.target.id==='customer-phone'){let digits=e.target.value.replace(/\D/g,'');if(digits.charAt(0)==='8')digits='7'+digits.slice(1);if(digits.charAt(0)!=='7'&&digits.length)digits='7'+digits;e.target.value=digits.length>1?'+7 ('+digits.slice(1,4)+(digits.length>=4?') ':'')+digits.slice(4,7)+(digits.length>=7?'-':'')+digits.slice(7,9)+(digits.length>=9?'-':'')+digits.slice(9,11):'+7 (';}
+  });
+  window.addEventListener('storage',function(e){
+    if(e.key!==KEY||!e.newValue)return;
+    try{
+      const updated=JSON.parse(e.newValue);
+      if(!updated||!updated.bookings||!updated.services)return;
+      data=updated;
+      if(!document.querySelector('.modal-backdrop'))render();
+    }catch(error){}
   });
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();installPrompt=e;});
   window.addEventListener('appinstalled',function(){showToast('ШИНА+ добавлена на экран');});
