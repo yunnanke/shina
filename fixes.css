@@ -156,6 +156,13 @@
   font-size: 12px;
 }
 .password-change-message.success { color: #28753c; }
+.settings-save-button {
+  width: auto;
+  min-width: 120px;
+  padding: 0 16px;
+  font-size: 12px;
+}
+.settings-save-button:after { content: none; }
 .admin-shell .booking-list { gap: 12px; }
 .admin-shell .booking-row {
   border: 1px solid rgba(14,14,14,.14);
