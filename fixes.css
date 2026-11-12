@@ -136,6 +136,16 @@
 .admin-sidebar .admin-nav button:hover .nav-icon { color: var(--admin-red); }
 .admin-sidebar .nav-label { color: inherit; }
 .admin-shell .booking-list .empty-state { color: #66645e; }
+.admin-shell .booking-list { gap: 12px; }
+.admin-shell .booking-row {
+  border: 1px solid rgba(14,14,14,.14);
+  box-shadow: 0 3px 10px rgba(14,14,14,.035);
+}
+.admin-shell .row-actions {
+  border-bottom: 1px solid rgba(14,14,14,.14);
+  margin: -7px 0 2px;
+  padding-bottom: 12px;
+}
 .days-off-title {
   margin-top: 16px;
   color: #5f5d57;
