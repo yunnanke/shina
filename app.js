@@ -3,6 +3,7 @@
   const root = document.getElementById('app');
   const KEY = 'shina-plus-demo-v1';
   const ADMIN_AUTH_KEY = 'shina-plus-admin-auth';
+  const ADMIN_PASSWORD_KEY = 'shina-plus-admin-password';
   const ADMIN_PASSWORD = 'shina2026';
   const servicesSeed = [
     { id: 'season', name: 'Сезонная замена, 4 колеса', price: 2800, duration: 50, category: 'Комплексные работы' },
@@ -50,6 +51,7 @@
     const fresh = seed(); saveData(fresh); return fresh;
   }
   function hasAdminAccess() { try { return localStorage.getItem(ADMIN_AUTH_KEY) === 'true'; } catch (e) { return false; } }
+  function getAdminPassword() { try { return localStorage.getItem(ADMIN_PASSWORD_KEY) || ADMIN_PASSWORD; } catch (e) { return ADMIN_PASSWORD; } }
   let data = loadData();
   function saveData() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
   let page = hasAdminAccess() ? 'admin' : 'client', adminTab = 'overview', selectedDate = dateOffset(0), bookingFilter = 'all', bookingStep = 1, adminTapCount = 0, adminTapTimer = null, bookingDraft = { services: [], date: '', time: '', carType: 'Легковой', diameter: 'R16', extras: [] }, installPrompt = null;
@@ -194,7 +196,7 @@
   function renderSettings() {
     return '<div class="admin-section"><section class="panel"><div class="panel-head"><div><h2>Мастерская и расписание</h2><p>Эти данные показываются клиентам на публичной странице</p></div></div><div class="settings-grid"><div class="setting-field"><label>Название</label><input data-setting="shopName" value="'+esc(data.settings.shopName)+'"></div><div class="setting-field"><label>Адрес</label><input data-setting="address" value="'+esc(data.settings.address)+'"></div><div class="setting-field"><label>Телефон</label><input data-setting="phone" value="'+esc(data.settings.phone)+'"></div><div class="setting-field"><label>Количество постов</label><input data-setting="posts" type="number" min="1" max="12" value="'+data.posts+'"></div><div class="setting-field"><label>Начало работы</label><input data-setting="open" type="time" value="'+esc(data.hours.open)+'"></div><div class="setting-field"><label>Окончание работы</label><input data-setting="close" type="time" value="'+esc(data.hours.close)+'"></div><div class="setting-field"><label>Буфер между машинами, мин</label><input data-setting="buffer" type="number" min="0" max="60" value="'+data.settings.buffer+'"></div><div class="setting-field"><label>Подтверждение записей</label><select data-setting="autoConfirm"><option value="true" '+(data.settings.autoConfirm?'selected':'')+'>Автоматически</option><option value="false" '+(!data.settings.autoConfirm?'selected':'')+'>Вручную</option></select></div></div><div class="days-off-title">Выходные дни</div><div class="days-off-grid">'+weekDays.map(function(day){return '<label class="day-off-option"><input type="checkbox" data-dayoff="'+day.id+'" '+(data.hours.daysOff.includes(day.id)?'checked':'')+'><span>'+day.label+'</span></label>';}).join('')+'</div><button class="top-button" style="margin-top:17px" data-action="save-settings">Сохранить настройки</button></section>' +
       '<section class="panel"><div class="panel-head"><div><h2>Услуги и ориентировочные цены</h2><p>Демо-прайс. Итоговая цена подтверждается в мастерской.</p></div></div>'+data.services.map(function(s){return '<div class="service-setting-row"><span>'+esc(s.name)+'</span><input type="number" data-service-price="'+esc(s.id)+'" value="'+Number(s.price)+'" aria-label="Цена '+esc(s.name)+'"><span>₽ · '+s.duration+' мин</span><span></span></div>';}).join('')+'<button class="top-button" style="margin-top:16px" data-action="save-prices">Сохранить цены</button></section>' +
-      '<section class="panel"><div class="panel-head"><div><h2>Демо-режим</h2><p>Все изменения сохраняются только в этом браузере.</p></div></div><button class="small-action danger" data-action="reset-demo">Сбросить демо-данные</button><button class="small-action" style="margin-left:8px" data-action="go-client">Открыть клиентскую страницу</button></section></div>';
+      '<section class="panel"><div class="panel-head"><div><h2>Демо-режим</h2><p>Все изменения сохраняются только в этом браузере.</p></div></div><button class="small-action danger" data-action="reset-demo">Сбросить демо-данные</button><button class="small-action" style="margin-left:8px" data-action="go-client">Открыть клиентскую страницу</button></section><section class="panel"><div class="panel-head"><div><h2>Сменить пароль</h2><p>Изменение пароля для входа в кабинет</p></div></div><div class="settings-grid"><div class="setting-field"><label for="old-admin-password">Старый пароль</label><input id="old-admin-password" type="password" autocomplete="current-password" placeholder="Введите старый пароль"></div><div class="setting-field"><label for="new-admin-password">Новый пароль</label><input id="new-admin-password" type="password" autocomplete="new-password" placeholder="Не менее 6 символов"></div><div class="setting-field"><label for="repeat-admin-password">Повторите новый пароль</label><input id="repeat-admin-password" type="password" autocomplete="new-password" placeholder="Повторите новый пароль"></div></div><p id="password-change-message" class="password-change-message hidden" aria-live="polite"></p><button class="top-button" style="margin-top:14px" data-action="change-admin-password">Сохранить новый пароль</button></section></div>';
   }
   function renderAdmin() {
     page = 'admin'; document.body.className = 'admin-body';
@@ -218,13 +220,31 @@
   function submitAdminLogin() {
     const input=document.getElementById('admin-password');
     if(!input)return;
-    if(input.value===ADMIN_PASSWORD){
+    if(input.value===getAdminPassword()){
       try{localStorage.setItem(ADMIN_AUTH_KEY,'true');}catch(e){}
       closeModal();page='admin';adminTab='overview';renderAdmin();showToast('Вход выполнен');
       return;
     }
     const error=document.getElementById('admin-login-error');if(error)error.classList.remove('hidden');
     input.value='';input.focus();
+  }
+  function changeAdminPassword() {
+    const oldInput=document.getElementById('old-admin-password');
+    const newInput=document.getElementById('new-admin-password');
+    const repeatInput=document.getElementById('repeat-admin-password');
+    const message=document.getElementById('password-change-message');
+    if(!oldInput||!newInput||!repeatInput||!message)return;
+    const oldPassword=oldInput.value;
+    const newPassword=newInput.value;
+    const repeatPassword=repeatInput.value;
+    message.classList.remove('hidden','success');
+    if(oldPassword!==getAdminPassword()){message.textContent='Старый пароль введён неверно.';return;}
+    if(newPassword.length<6){message.textContent='Новый пароль должен содержать не менее 6 символов.';return;}
+    if(newPassword!==repeatPassword){message.textContent='Новые пароли не совпадают.';return;}
+    if(newPassword===oldPassword){message.textContent='Новый пароль должен отличаться от старого.';return;}
+    try{localStorage.setItem(ADMIN_PASSWORD_KEY,newPassword);}catch(e){message.textContent='Не удалось сохранить пароль в этом браузере.';return;}
+    oldInput.value='';newInput.value='';repeatInput.value='';
+    message.textContent='Пароль успешно изменён.';message.classList.add('success');
   }
   function openBooking(prefill) {
     bookingStep=1;
@@ -313,6 +333,7 @@
     if(action==='open-booking'){openBooking();return;}
     if(action==='go-admin'){requestAdminAccess();return;}
     if(action==='admin-login'){submitAdminLogin();return;}
+    if(action==='change-admin-password'){changeAdminPassword();return;}
     if(action==='go-client'){page='client';renderClient();window.scrollTo(0,0);return;}
     if(action==='close-modal'){closeModal();return;}
     if(action==='booking-next'){if(bookingStep===1&&!bookingDraft.services.length){showToast('Выберите хотя бы одну услугу');return;}if(bookingStep===3&&(!bookingDraft.date||!bookingDraft.time)){showToast('Выберите свободное время');return;}if(bookingStep===2){const type=document.getElementById('car-type');const dia=document.getElementById('diameter');if(type)bookingDraft.carType=type.value;if(dia)bookingDraft.diameter=dia.value;}bookingStep=Math.min(4,bookingStep+1);renderBookingModal();return;}

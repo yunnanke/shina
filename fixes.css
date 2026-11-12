@@ -150,6 +150,12 @@
   color: #b4231d;
   font-size: 12px;
 }
+.password-change-message {
+  margin: 12px 0 0;
+  color: #b4231d;
+  font-size: 12px;
+}
+.password-change-message.success { color: #28753c; }
 .admin-shell .booking-list { gap: 12px; }
 .admin-shell .booking-row {
   border: 1px solid rgba(14,14,14,.14);
