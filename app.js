@@ -2,6 +2,8 @@
   'use strict';
   const root = document.getElementById('app');
   const KEY = 'shina-plus-demo-v1';
+  const ADMIN_AUTH_KEY = 'shina-plus-admin-auth';
+  const ADMIN_PASSWORD = 'shina2026';
   const servicesSeed = [
     { id: 'season', name: 'Сезонная замена, 4 колеса', price: 2800, duration: 50, category: 'Комплексные работы' },
     { id: 'wheel', name: 'Снятие и установка колеса', price: 350, duration: 15, category: 'Работы с колесом' },
@@ -47,9 +49,10 @@
     try { const saved = localStorage.getItem(KEY); if (saved) { const parsed = JSON.parse(saved); if (parsed && parsed.bookings && parsed.services) return parsed; } } catch (e) {}
     const fresh = seed(); saveData(fresh); return fresh;
   }
+  function hasAdminAccess() { try { return localStorage.getItem(ADMIN_AUTH_KEY) === 'true'; } catch (e) { return false; } }
   let data = loadData();
   function saveData() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
-  let page = 'client', adminTab = 'overview', selectedDate = dateOffset(0), bookingFilter = 'all', bookingStep = 1, adminTapCount = 0, adminTapTimer = null, bookingDraft = { services: [], date: '', time: '', carType: 'Легковой', diameter: 'R16', extras: [] }, installPrompt = null;
+  let page = hasAdminAccess() ? 'admin' : 'client', adminTab = 'overview', selectedDate = dateOffset(0), bookingFilter = 'all', bookingStep = 1, adminTapCount = 0, adminTapTimer = null, bookingDraft = { services: [], date: '', time: '', carType: 'Легковой', diameter: 'R16', extras: [] }, installPrompt = null;
   const rub = function (n) { return new Intl.NumberFormat('ru-RU').format(n) + ' ₽'; };
   const dateRu = function (d, options) { return new Intl.DateTimeFormat('ru-RU', options || { day: 'numeric', month: 'long' }).format(new Date(d + 'T12:00:00')); };
   const fullDate = function (d) { return new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(d + 'T12:00:00')); };
@@ -195,12 +198,34 @@
   }
   function renderAdmin() {
     page = 'admin'; document.body.className = 'admin-body';
-    const nav = [['overview','◫','Обзор'],['bookings','▤','Записи'],['schedule','▦','Расписание'],['clients','◎','Клиенты'],['settings','⚙︎','Настройки']];
+    const nav = [['overview','◫','Обзор'],['bookings','▤','Записи'],['schedule','▦','Расписание'],['clients','◎','Клиенты'],['settings','<svg class="gear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 2.94-.09-.03a1.7 1.7 0 0 0-1.84.36l-.07.06h-3.4l-.02-.09a1.7 1.7 0 0 0-1.18-1.43l-.09-.03-2.94 1.7-.06-.07a1.7 1.7 0 0 0-1.88-.34l-.08.03-1.7-2.94.07-.06a1.7 1.7 0 0 0 .36-1.84l-.03-.09v-3.4l.09-.02a1.7 1.7 0 0 0 1.43-1.18l.03-.09-1.7-2.94.07-.06a1.7 1.7 0 0 0 .34-1.88l-.03-.08 2.94-1.7.06.07a1.7 1.7 0 0 0 1.84.36l.09-.03h3.4l.02.09a1.7 1.7 0 0 0 1.18 1.43l.09.03 2.94-1.7.06.07a1.7 1.7 0 0 0 1.88.34l.08-.03 1.7 2.94-.07.06a1.7 1.7 0 0 0-.36 1.84l.03.09v3.4l-.09.02a1.7 1.7 0 0 0-1.43 1.18l-.03.09z"></path></svg>','Настройки']];
     const titles = {overview:'Добрый день',bookings:'Записи',schedule:'Расписание',clients:'Клиенты',settings:'Настройки'};
     let content = adminTab==='overview'?renderOverview():adminTab==='bookings'?renderBookings():adminTab==='schedule'?renderSchedule():adminTab==='clients'?renderClients():renderSettings();
     root.innerHTML = '<div class="admin-shell"><aside class="admin-sidebar"><div class="admin-brand">ШИНА<span>+</span></div><div class="shop-chip"><div class="shop-avatar">Ш+</div><div><strong>'+esc(data.settings.shopName)+'</strong><small>Мастерская · Москва</small></div></div><nav class="admin-nav">'+nav.map(function(n){return '<button class="'+(adminTab===n[0]?'active':'')+'" data-action="go-tab" data-tab="'+n[0]+'"><span class="nav-icon">'+n[1]+'</span><span class="nav-label">'+n[2]+'</span></button>';}).join('')+'</nav><div class="sidebar-bottom"><nav class="admin-nav"><button data-action="go-client"><span class="nav-icon">↗︎</span><span class="nav-label">Клиентская страница</span></button></nav></div></aside><main class="admin-main"><header class="admin-topbar"><div><h1 class="admin-title">'+titles[adminTab]+'</h1><div class="admin-subtitle">'+(adminTab==='overview'?'Сезон в разгаре. Вот что происходит в мастерской.':adminTab==='bookings'?esc(fullDate(selectedDate)):adminTab==='schedule'?esc(fullDate(selectedDate)):adminTab==='clients'?'История визитов и автомобили':'Управляйте расписанием, услугами и данными мастерской')+'</div></div><div class="top-actions"><button class="icon-button" data-action="notify-test" aria-label="Уведомления">♧</button><button class="top-button" data-action="add-booking">＋ Новая запись</button><div class="avatar">АД</div></div></header>'+content+'</main></div>';
   }
   function render() { if (page==='admin') renderAdmin(); else renderClient(); }
+  function renderAdminLogin() {
+    const old=document.querySelector('.modal-backdrop');if(old)old.remove();
+    const modal=document.createElement('div');modal.className='modal-backdrop';
+    modal.innerHTML='<div class="modal admin-modal admin-login-modal" role="dialog" aria-modal="true" aria-labelledby="admin-login-title"><button class="modal-close" data-action="close-modal" aria-label="Закрыть">×</button><div class="micro">ШИНА+ · ДЛЯ СОТРУДНИКОВ</div><h2 id="admin-login-title">Вход в кабинет</h2><div class="field"><label for="admin-password">Пароль</label><input id="admin-password" type="password" autocomplete="current-password" placeholder="Введите пароль"></div><p id="admin-login-error" class="login-error hidden" role="alert">Пароль не подошёл. Попробуйте ещё раз.</p><div class="modal-actions"><button class="btn-light" data-action="close-modal">Отмена</button><button class="btn-black" data-action="admin-login">Войти <b>→</b></button></div></div>';
+    document.body.appendChild(modal);document.getElementById('admin-password').focus();
+    modal.addEventListener('click',function(e){if(e.target===modal)closeModal();});
+  }
+  function requestAdminAccess() {
+    if(hasAdminAccess()){page='admin';renderAdmin();return;}
+    renderAdminLogin();
+  }
+  function submitAdminLogin() {
+    const input=document.getElementById('admin-password');
+    if(!input)return;
+    if(input.value===ADMIN_PASSWORD){
+      try{localStorage.setItem(ADMIN_AUTH_KEY,'true');}catch(e){}
+      closeModal();page='admin';adminTab='overview';renderAdmin();showToast('Вход выполнен');
+      return;
+    }
+    const error=document.getElementById('admin-login-error');if(error)error.classList.remove('hidden');
+    input.value='';input.focus();
+  }
   function openBooking(prefill) {
     bookingStep=1;
     bookingDraft={services:[],date:'',time:'',carType:'Легковой',diameter:'R16',extras:[]};
@@ -271,7 +296,7 @@
     const b=data.bookings.find(function(x){return x.id===id;});if(!b)return;
     b.status='cancelled';saveData();closeModal();renderClient();showToast('Запись отменена · мастерская уведомлена');
   }
-  function setTab(tab) { adminTab=tab;page='admin';renderAdmin(); }
+  function setTab(tab) { adminTab=tab;page='admin';try{localStorage.setItem('shina-plus-admin-tab',tab);}catch(e){}renderAdmin(); }
   function saveSettings() {
     document.querySelectorAll('[data-setting]').forEach(function(el){const key=el.getAttribute('data-setting');const value=el.value;if(key==='shopName'||key==='address'||key==='phone')data.settings[key]=value;if(key==='open')data.hours.open=value;if(key==='close')data.hours.close=value;if(key==='posts')data.posts=Math.max(1,Math.min(12,Number(value)||1));if(key==='buffer')data.settings.buffer=Math.max(0,Number(value)||0);if(key==='autoConfirm')data.settings.autoConfirm=value==='true';});
     const off=[];document.querySelectorAll('[data-dayoff]').forEach(function(el){if(el.checked)off.push(Number(el.getAttribute('data-dayoff')));});data.hours.daysOff=off;saveData();renderAdmin();showToast('Настройки сохранены');
@@ -284,9 +309,10 @@
     if(slotButton){openBooking({date:slotButton.getAttribute('data-slot-date'),time:slotButton.getAttribute('data-slot-time')});return;}
     const el=e.target.closest('[data-action]'); if(!el)return;
     const action=el.getAttribute('data-action'); const id=el.getAttribute('data-id');
-    if(action==='secret-admin'){e.preventDefault();adminTapCount++;clearTimeout(adminTapTimer);adminTapTimer=setTimeout(function(){adminTapCount=0;},2500);if(adminTapCount>=5){adminTapCount=0;clearTimeout(adminTapTimer);page='admin';adminTab='overview';renderAdmin();}return;}
+    if(action==='secret-admin'){e.preventDefault();adminTapCount++;clearTimeout(adminTapTimer);adminTapTimer=setTimeout(function(){adminTapCount=0;},2500);if(adminTapCount>=5){adminTapCount=0;clearTimeout(adminTapTimer);requestAdminAccess();}return;}
     if(action==='open-booking'){openBooking();return;}
-    if(action==='go-admin'){page='admin';adminTab='overview';renderAdmin();return;}
+    if(action==='go-admin'){requestAdminAccess();return;}
+    if(action==='admin-login'){submitAdminLogin();return;}
     if(action==='go-client'){page='client';renderClient();window.scrollTo(0,0);return;}
     if(action==='close-modal'){closeModal();return;}
     if(action==='booking-next'){if(bookingStep===1&&!bookingDraft.services.length){showToast('Выберите хотя бы одну услугу');return;}if(bookingStep===3&&(!bookingDraft.date||!bookingDraft.time)){showToast('Выберите свободное время');return;}if(bookingStep===2){const type=document.getElementById('car-type');const dia=document.getElementById('diameter');if(type)bookingDraft.carType=type.value;if(dia)bookingDraft.diameter=dia.value;}bookingStep=Math.min(4,bookingStep+1);renderBookingModal();return;}
@@ -319,12 +345,13 @@
     if(el.id==='diameter'){bookingDraft.diameter=el.value;}
     if(el.id==='car-type'){bookingDraft.carType=el.value;}
   });
+  document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target&&e.target.id==='admin-password'){e.preventDefault();submitAdminLogin();}});
   document.addEventListener('input',function(e){
     if(e.target.id==='client-search'){const value=e.target.value.toLowerCase();document.querySelectorAll('#clients-table tbody tr').forEach(function(row){row.style.display=row.textContent.toLowerCase().includes(value)?'':'none';});}
     if(e.target.id==='customer-phone'){let digits=e.target.value.replace(/\D/g,'');if(digits.charAt(0)==='8')digits='7'+digits.slice(1);if(digits.charAt(0)!=='7'&&digits.length)digits='7'+digits;e.target.value=digits.length>1?'+7 ('+digits.slice(1,4)+(digits.length>=4?') ':'')+digits.slice(4,7)+(digits.length>=7?'-':'')+digits.slice(7,9)+(digits.length>=9?'-':'')+digits.slice(9,11):'+7 (';}
   });
   window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();installPrompt=e;});
   window.addEventListener('appinstalled',function(){showToast('ШИНА+ добавлена на экран');});
-  if(location.hash==='#admin')page='admin';
+  if(location.hash==='#admin'&&!hasAdminAccess())page='client';
   render();
 })();

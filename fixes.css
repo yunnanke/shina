@@ -7,6 +7,14 @@
 }
 .slot { color: var(--paper); }
 .slot strong { color: var(--paper); }
+.tape {
+  position: relative;
+  display: table;
+  right: auto;
+  bottom: auto;
+  margin: 28px 5% 0 auto;
+  transform: rotate(2deg);
+}
 .admin-shell {
   --admin-paper: #e9e5db;
   --admin-surface: #f4f1e9;
@@ -136,6 +144,12 @@
 .admin-sidebar .admin-nav button:hover .nav-icon { color: var(--admin-red); }
 .admin-sidebar .nav-label { color: inherit; }
 .admin-shell .booking-list .empty-state { color: #66645e; }
+.gear-icon { display: block; width: 18px; height: 18px; }
+.admin-login-modal .login-error {
+  margin: 4px 0 12px;
+  color: #b4231d;
+  font-size: 12px;
+}
 .admin-shell .booking-list { gap: 12px; }
 .admin-shell .booking-row {
   border: 1px solid rgba(14,14,14,.14);
@@ -183,6 +197,11 @@
   accent-color: var(--admin-red);
 }
 @media (max-width: 650px) {
+  .tape {
+    max-width: calc(100% - 16px);
+    margin: 24px auto 0;
+    text-align: center;
+  }
   .days-off-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .admin-sidebar {
     background: rgba(244, 241, 233, .96);
